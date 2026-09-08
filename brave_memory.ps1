@@ -141,10 +141,10 @@ function Write-Flag {
         [System.Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
         
         if ($result -eq 0) {
-            Log "✓ $flagName @ 0x$($address.ToString('X')) = $value" "SUCCESS"
+            Log "[+] $flagName @ 0x$($address.ToString('X')) = $value" "SUCCESS"
             return $true
         } else {
-            Log "✗ $flagName @ 0x$($address.ToString('X')) FAILED: 0x$($result.ToString('X'))" "ERROR"
+            Log "[-] $flagName @ 0x$($address.ToString('X')) FAILED: 0x$($result.ToString('X'))" "ERROR"
             return $false
         }
     } catch {
