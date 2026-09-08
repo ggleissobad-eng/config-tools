@@ -21,14 +21,41 @@ function Fetch-Offsets {
             $response = (New-Object Net.WebClient).DownloadString($url)
             if ($response) {
                 Log "Parsing offsets..."
+                
+                # Debug: show first 500 chars
+                Write-Host "`n[DEBUG] First 500 chars of response:"
+                Write-Host $response.Substring(0, [Math]::Min(500, $response.Length))
+                Write-Host ""
+                
                 $offsets = @{}
-                $regex = [regex]'#define\s+([A-Z_0-9]+)\s+(0x[0-9a-fA-F]+)'
-                $matches = $regex.Matches($response)
-                foreach ($match in $matches) {
-                    $name = $match.Groups[1].Value
-                    $hex = $match.Groups[2].Value
-                    $offsets[$name] = [int]$hex
+                
+                # Try multiple patterns
+                $patterns = @(
+                    '#define\s+([A-Z_0-9]+)\s+(0x[0-9a-fA-F]+)',
+                    'const\s+u?int(?:32|64)?\s+([A-Z_0-9]+)\s*=\s*(0x[0-9a-fA-F]+)',
+                    '([A-Z_0-9]+)\s*=\s*(0x[0-9a-fA-F]+)'
+                )
+                
+                foreach ($pattern in $patterns) {
+                    $regex = [regex]$pattern
+                    $matches = $regex.Matches($response)
+                    if ($matches.Count -gt 0) {
+                        Write-Host "[DEBUG] Pattern matched: $($matches.Count) offsets found" -ForegroundColor Green
+                        foreach ($match in $matches) {
+                            $name = $match.Groups[1].Value
+                            $hex = $match.Groups[2].Value
+                            $offsets[$name] = [int64]$hex
+                        }
+                        break
+                    }
                 }
+                
+                if ($offsets.Count -eq 0) {
+                    Write-Host "[DEBUG] No patterns matched. Response might be different format." -ForegroundColor Yellow
+                    Write-Host "[DEBUG] Full response (first 2000 chars):" -ForegroundColor Yellow
+                    Write-Host $response.Substring(0, [Math]::Min(2000, $response.Length)) -ForegroundColor Yellow
+                }
+                
                 Log "Loaded $($offsets.Count) offsets" "SUCCESS"
                 return $offsets
             }
