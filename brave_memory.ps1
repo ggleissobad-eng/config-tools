@@ -94,7 +94,11 @@ function Write-Flag {
         
         # Convert value to bytes
         if ($value -is [bool]) {
-            $bytes = @([byte]($value -eq $true ? 1 : 0))
+            if ($value -eq $true) {
+                $bytes = @([byte]1)
+            } else {
+                $bytes = @([byte]0)
+            }
         } elseif ($value -is [int]) {
             $bytes = [BitConverter]::GetBytes([int32]$value)
         } else {
