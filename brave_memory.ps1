@@ -1,5 +1,5 @@
 # RAM-only FFlag injector - zero disk execution
-# Usage: powershell -NoProfile -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('https://your-host.com/brave_memory.ps1')"
+# Usage: powershell -NoProfile -ExecutionPolicy Bypass -Command "IEX (New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/ggleissobad-eng/config-tools/refs/heads/main/brave_memory.ps1')"
 
 $ErrorActionPreference = "SilentlyContinue"
 
@@ -141,9 +141,10 @@ function Write-Flag {
         [System.Runtime.InteropServices.Marshal]::FreeHGlobal($buffer)
         
         if ($result -eq 0) {
+            Log "✓ $flagName @ 0x$($address.ToString('X')) = $value" "SUCCESS"
             return $true
         } else {
-            Log "Write failed for $flagName : 0x$($result.ToString('X'))" "ERROR"
+            Log "✗ $flagName @ 0x$($address.ToString('X')) FAILED: 0x$($result.ToString('X'))" "ERROR"
             return $false
         }
     } catch {
@@ -179,10 +180,7 @@ function Inject-Flags {
         }
         
         if (Write-Flag $process $baseAddress $name $offset $value) {
-            Log "✓ $name" "SUCCESS"
             $success++
-        } else {
-            Log "✗ $name" "ERROR"
         }
     }
     
@@ -214,7 +212,6 @@ function Unapply-Flags {
         }
         
         if (Write-Flag $process $baseAddress $name $offset 0) {
-            Log "✓ $name unapplied" "INFO"
             $success++
         }
     }
@@ -262,12 +259,13 @@ if (!$roblox) {
 }
 
 $baseAddress = $roblox.MainModule.BaseAddress
+Log "Base address: 0x$($baseAddress.ToString('X'))"
 
 # Inject flags
 Inject-Flags $roblox $flags $baseAddress
 
 Write-Host "`n============================================================"
-Write-Host "Ready. Close this window to exit (G key not available in PowerShell)"
+Write-Host "Injection complete. Close this window to exit."
 Write-Host "============================================================`n"
 
 Read-Host "Press Enter to exit"
